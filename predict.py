@@ -75,15 +75,23 @@ def main():
     parser.add_argument('--use_gpu', required=False, help='Use GPU?')
     args = parser.parse_args()
     
+    # Auto-detect device 
+    if torch.cuda.is_available():
+        device = 'cuda'
+        use_gpu = True
+    else:
+        device = 'cpu'
+        use_gpu = False
+    
     # Configure of VietOCR
     config = Cfg.load_config_from_name('vgg_transformer')
     config['cnn']['pretrained'] = True
     config['predictor']['beamsearch'] = True
-    config['device'] = 'mps'
+    config['device'] = device
     recognitor = Predictor(config)
     
-    # Config of PaddleOCR - Suppress logs
-    detector = PaddleOCR(use_angle_cls=False, lang="vi", use_gpu=True, show_log=False)
+    # Config of PaddleOCR - Suppress all logs
+    detector = PaddleOCR(use_angle_cls=False, lang="vi", use_gpu=use_gpu, show_log=False)
     
     # Predict and output only the text
     result_text = predict(recognitor, detector, args.img, padding=2)
