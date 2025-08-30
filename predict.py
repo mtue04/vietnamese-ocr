@@ -20,11 +20,11 @@ from vietocr.vietocr.tool.config import Cfg
 
 from PaddleOCR import PaddleOCR, draw_ocr
 
-from VietnameseOcrCorrection.tool.predictor import Corrector
-import time
-from VietnameseOcrCorrection.tool.utils import extract_phrases
+# from VietnameseOcrCorrection.tool.predictor import Corrector
+# import time
+# from VietnameseOcrCorrection.tool.utils import extract_phrases
 
-from ultis import display_image_in_actual_size
+# from ultis import display_image_in_actual_size
 
 
 # Specifying output path and font path.
@@ -61,42 +61,33 @@ def predict(recognitor, detector, img_path, padding=4):
             cropped_image = Image.fromarray(cropped_image)
         except:
             continue
-
         rec_result = recognitor.predict(cropped_image)
-        text = rec_result#[0]
-
+        text = rec_result
         texts.append(text)
-        print(text)
-
-    return boxes, texts
+    
+    # Join all texts into one line
+    return " ".join(texts)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--img', required=True, help='foo help')
-    parser.add_argument('--output', required='./runs/predict', help='path to save output file')
-    parser.add_argument('--use_gpu', required=False, help='is use GPU?')
+    parser.add_argument('--img', required=True, help='Path to input image')
+    parser.add_argument('--output', default='./runs/predict', help='Path to save output file')
+    parser.add_argument('--use_gpu', required=False, help='Use GPU?')
     args = parser.parse_args()
-
+    
     # Configure of VietOCR
-    # Default weight
     config = Cfg.load_config_from_name('vgg_transformer')
-    # Custom weight
-    # config = Cfg.load_config_from_file('vi00_vi01_transformer.yml')
-    # config['weights'] = './pretrain_ocr/vi00_vi01_transformer.pth'
-
     config['cnn']['pretrained'] = True
     config['predictor']['beamsearch'] = True
     config['device'] = 'mps'
-
     recognitor = Predictor(config)
-
-    # Config of PaddleOCR
-    detector = PaddleOCR(use_angle_cls=False, lang="vi", use_gpu=True)
     
-
-    # Predict
-    boxes, texts = predict(recognitor, detector, args.img, padding=2)
-
+    # Config of PaddleOCR - Suppress logs
+    detector = PaddleOCR(use_angle_cls=False, lang="vi", use_gpu=True, show_log=False)
+    
+    # Predict and output only the text
+    result_text = predict(recognitor, detector, args.img, padding=2)
+    print(result_text)
 
 if __name__ == "__main__":    
     main()
